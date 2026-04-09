@@ -1,8 +1,8 @@
 from domain.entities.movie import Movie
-from infra.adapters.csv_adapter import CsvAdapter
+from infra.adapters.data_source import DataSource
 
 
-def load_movies(adapter: CsvAdapter) -> list[Movie]:
+def load_movies(adapter: DataSource) -> list[Movie]:
     return [_to_entity(record) for record in adapter.fetch_all()]
 
 

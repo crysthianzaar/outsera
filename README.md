@@ -66,10 +66,10 @@ curl http://localhost:8000/producers/award-intervals
 
 ### Utility endpoints
 
-| Method | Route     | Description          |
-|--------|-----------|----------------------|
-| GET    | `/ping`   | Liveness check       |
-| GET    | `/health` | Health status        |
+| Method | Route     | Description    |
+|--------|-----------|----------------|
+| GET    | `/ping`   | Liveness check |
+| GET    | `/health` | Health status  |
 
 ---
 
@@ -82,9 +82,13 @@ The project follows a clean layered architecture:
   - `repositories/` — abstract protocols (`MovieReader`, `MovieWriter`)
   - `services/` — domain algorithms (`award_interval_service`)
   - `types/` — value objects (`ProducerInterval`, `AwardIntervalResult`)
-  - `usecases/` — use case orchestration
+  - `usecases/` — use case orchestration (`GetAwardIntervalsUseCase`)
 - **`api/`** — HTTP layer (Flask blueprints, Pydantic response models)
-- **`infra/`** — infrastructure implementations (SQLAlchemy, CSV loader)
+- **`infra/`** — infrastructure implementations
+  - `adapters/` — isolation layer for external dependencies (SQLAlchemy, CSV)
+  - `db/` — SQLAlchemy models and session factory
+  - `loaders/` — data ingestion pipeline
+  - `repositories/` — concrete repository implementations
 
 ---
 
@@ -94,40 +98,45 @@ The project follows a clean layered architecture:
 .
 ├── api/
 │   ├── blueprints/
-│   │   ├── health.py               # Observability endpoints
-│   │   └── producers.py            # Domain endpoints
-│   └── responses.py                # Pydantic response models
+│   │   ├── health.py                   # Liveness and health endpoints
+│   │   └── producers.py                # Award intervals endpoint
+│   └── responses.py                    # Pydantic response models
 ├── domain/
 │   ├── entities/
-│   │   └── movie.py                # Immutable Movie entity
+│   │   └── movie.py                    # Immutable Movie entity
 │   ├── repositories/
-│   │   └── movie_repository.py     # MovieReader / MovieWriter protocols
+│   │   └── movie_repository.py         # MovieReader / MovieWriter protocols
 │   ├── services/
-│   │   └── award_interval_service.py
+│   │   └── award_interval_service.py   # Core business logic
 │   ├── types/
 │   │   ├── award_interval_result.py
 │   │   └── producer_interval.py
 │   └── usecases/
 │       └── get_award_intervals.py
 ├── infra/
+│   ├── adapters/
+│   │   ├── csv_adapter.py              # CSV file reader
+│   │   ├── data_source.py              # DataSource protocol
+│   │   └── database_adapter.py         # SQLAlchemy isolation layer
 │   ├── data/
 │   │   └── movielist.csv
 │   ├── db/
 │   │   ├── base.py
-│   │   ├── models.py               # SQLAlchemy 2.0 ORM models
+│   │   ├── models.py                   # SQLAlchemy 2.0 ORM models
 │   │   └── session.py
 │   ├── loaders/
-│   │   └── movie_file_loader.py
+│   │   └── movie_loader.py             # CSV → domain entity mapping
 │   └── repositories/
-│       ├── repository_factory.py
-│       └── sqlalchemy_movie_repository.py
+│       └── movie_repository_impl.py    # Concrete MovieRepository
 ├── tests/integration/
-├── config.py                       # Settings via pydantic-settings
-├── create_app.py                   # Flask application factory
-├── main.py                         # WSGI entrypoint (gunicorn main:app)
-├── Dockerfile                      # Multi-stage: production + test
+├── config.py                           # Settings via pydantic-settings
+├── create_app.py                       # Flask application factory
+├── main.py                             # WSGI entrypoint (gunicorn)
+├── pyproject.toml                      # Tool configuration (ruff, mypy, pytest)
+├── Dockerfile                          # Multi-stage: production + test
 ├── docker-compose.yml
-└── requirements.txt
+├── requirements.txt
+└── requirements-dev.txt
 ```
 
 ---

@@ -1,7 +1,7 @@
 from unittest import TestCase
 
 from create_app import create_app
-from tests.integration.conftest import AppConfig as TestConfig
+from tests.integration.test_config import AppConfig as TestConfig
 
 
 class TestHealthEndpoints(TestCase):

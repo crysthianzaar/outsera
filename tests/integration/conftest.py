@@ -1,15 +1,7 @@
-import os
-
 import pytest
 
-from config import Config
 from create_app import create_app
-
-
-class AppConfig(Config):
-    DATABASE_URL: str = "sqlite:///:memory:"
-    CSV_PATH: str = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../infra/data/movielist.csv"))
-    IN_MEMORY_DB: bool = True
+from tests.integration.test_config import AppConfig
 
 
 @pytest.fixture()

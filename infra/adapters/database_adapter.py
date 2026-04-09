@@ -7,9 +7,9 @@ class DatabaseAdapter:
     def __init__(self, session_factory: sessionmaker[Session]) -> None:
         self._session_factory = session_factory
 
-    def fetch_winners(self) -> list[dict]:
+    def fetch_all(self) -> list[dict]:
         with self._session_factory() as session:
-            rows = session.query(MovieModel).filter(MovieModel.winner.is_(True)).all()
+            rows = session.query(MovieModel).all()
             return [_to_dict(row) for row in rows]
 
     def save_all(self, records: list[dict]) -> None:

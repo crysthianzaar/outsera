@@ -1,6 +1,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
+
 from infra.db.base import Base
 
 
@@ -15,4 +16,4 @@ def create_session_factory(database_url: str, in_memory: bool = False) -> sessio
         engine = create_engine(database_url)
 
     Base.metadata.create_all(engine)
-    return sessionmaker(bind=engine, autoflush=False, autocommit=False)
+    return sessionmaker(engine, autoflush=False, autocommit=False)

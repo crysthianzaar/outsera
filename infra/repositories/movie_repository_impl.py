@@ -8,7 +8,8 @@ class MovieRepository(MovieReader, MovieWriter):
         self._db = db
 
     def find_all(self) -> list[Movie]:
-        return [_to_entity(record) for record in self._db.fetch_winners()]
+        records = self._db.fetch_all()
+        return [_to_entity(r) for r in records if r["winner"]]
 
     def save_all(self, movies: list[Movie]) -> None:
         self._db.save_all([_to_record(movie) for movie in movies])

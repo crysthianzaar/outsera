@@ -204,27 +204,35 @@ class TestThreeConsecutiveWins(CsvTestCase):
         )
 
 
-class TestUtf8Bom(TestCase):
-    def test_csv_with_utf8_bom_is_read_without_error(self):
-        content = "year;title;studios;producers;winner\n2000;Film A;S;Producer A;yes\n2005;Film B;S;Producer A;yes\n"
+class TestUtf8Bom(CsvTestCase):
+    @classmethod
+    def _make_bom_csv(cls) -> str:
         tmp = tempfile.NamedTemporaryFile(mode="wb", suffix=".csv", delete=False)
+        content = "year;title;studios;producers;winner\n2000;Film A;S;Producer A;yes\n2005;Film B;S;Producer A;yes\n"
         tmp.write(b"\xef\xbb\xbf")
         tmp.write(content.encode("utf-8"))
         tmp.close()
+        return tmp.name
+
+    def setUp(self):
+        self._bom_path = self._make_bom_csv()
 
         class Cfg(Config):
             DATABASE_URL: str = "sqlite:///:memory:"
-            CSV_PATH: str = tmp.name
+            CSV_PATH: str = self._bom_path
             IN_MEMORY_DB: bool = True
 
-        try:
-            app = create_app(Cfg())
-            app.config["TESTING"] = True
-            response = app.test_client().get("/producers/award-intervals")
-            self.assertEqual(response.status_code, 200)
-            self.assertEqual(response.json["min"][0]["interval"], 5)
-        finally:
-            os.unlink(tmp.name)
+        app = create_app(Cfg())
+        app.config["TESTING"] = True
+        self.client = app.test_client()
+
+    def tearDown(self):
+        os.unlink(self._bom_path)
+
+    def test_csv_with_utf8_bom_is_read_without_error(self):
+        response = self.client.get("/producers/award-intervals")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json["min"][0]["interval"], 5)
 
 
 class TestIntervalInvariants(CsvTestCase):
