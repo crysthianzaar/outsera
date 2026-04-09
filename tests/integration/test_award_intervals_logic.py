@@ -3,7 +3,7 @@ import tempfile
 
 from unittest import TestCase
 
-from app_factory import create_app
+from create_app import create_app
 from config import Config
 from tests.integration.csv_test_case import CsvTestCase
 
@@ -213,9 +213,9 @@ class TestUtf8Bom(TestCase):
         tmp.close()
 
         class Cfg(Config):
-            DATABASE_URL = "sqlite:///:memory:"
-            CSV_PATH = tmp.name
-            API_TOKEN = None
+            DATABASE_URL: str = "sqlite:///:memory:"
+            CSV_PATH: str = tmp.name
+            IN_MEMORY_DB: bool = True
 
         try:
             app = create_app(Cfg())

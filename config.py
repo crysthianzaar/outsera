@@ -1,7 +1,7 @@
-import os
+from pydantic_settings import BaseSettings
 
 
-class Config:
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///:memory:")
-    CSV_PATH: str = os.getenv("CSV_PATH", "data/movielist.csv")
-    API_TOKEN: str | None = os.getenv("API_TOKEN")
+class Config(BaseSettings):
+    DATABASE_URL: str = "sqlite:///:memory:"
+    CSV_PATH: str = "infra/data/movielist.csv"
+    IN_MEMORY_DB: bool = True

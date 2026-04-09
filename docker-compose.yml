@@ -1,9 +1,25 @@
 services:
   api:
-    build: .
+    build:
+      context: .
+      target: production
     ports:
-      - "8080:8080"
+      - "8000:8000"
     environment:
-      - CSV_PATH=data/movielist.csv
-      # Uncomment to enable token auth:
-      # - API_TOKEN=your-secret-token
+      - CSV_PATH=infra/data/movielist.csv
+      - IN_MEMORY_DB=true
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  test:
+    build:
+      context: .
+      target: test
+    environment:
+      - IN_MEMORY_DB=true
+    profiles:
+      - test

@@ -1,31 +1,20 @@
 import os
+
 import pytest
 
-from app_factory import create_app
 from config import Config
+from create_app import create_app
 
 
-class TestConfig(Config):
-    DATABASE_URL = "sqlite:///:memory:"
-    CSV_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../data/movielist.csv"))
-    API_TOKEN = None
-
-
-class TestConfigWithToken(TestConfig):
-    API_TOKEN = "test-secret-token"
+class AppConfig(Config):
+    DATABASE_URL: str = "sqlite:///:memory:"
+    CSV_PATH: str = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../infra/data/movielist.csv"))
+    IN_MEMORY_DB: bool = True
 
 
 @pytest.fixture()
 def client():
-    app = create_app(TestConfig())
-    app.config["TESTING"] = True
-    with app.test_client() as c:
-        yield c
-
-
-@pytest.fixture()
-def client_with_token():
-    app = create_app(TestConfigWithToken())
+    app = create_app(AppConfig())
     app.config["TESTING"] = True
     with app.test_client() as c:
         yield c

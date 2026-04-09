@@ -1,7 +1,7 @@
 from unittest import TestCase
 
-from app_factory import create_app
-from tests.integration.conftest import TestConfig
+from create_app import create_app
+from tests.integration.conftest import AppConfig as TestConfig
 
 
 EXPECTED_MIN = [
@@ -24,10 +24,11 @@ EXPECTED_MAX = [
 
 
 class TestAwardIntervalsEndpoint(TestCase):
-    def setUp(self):
+    @classmethod
+    def setUpClass(cls):
         app = create_app(TestConfig())
         app.config["TESTING"] = True
-        self.client = app.test_client()
+        cls.client = app.test_client()
 
     def _get(self):
         return self.client.get("/producers/award-intervals")

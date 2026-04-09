@@ -1,53 +1,47 @@
 # Golden Raspberry Awards API
 
-API RESTful para consulta de intervalos de prêmios da categoria **Pior Filme** do Golden Raspberry Awards.
+RESTful API to read the list of nominees and winners in the **Worst Film** category of the Golden Raspberry Awards.
 
-## Requisitos
+---
 
-- Python 3.12+
-- Docker e Docker Compose (opcional)
+## Requirements
 
-## Executando com Docker
+- Docker
+- Docker Compose
+
+---
+
+## Running the API
 
 ```bash
 docker-compose up --build
 ```
 
-A API estará disponível em `http://localhost:8080`.
+The API will be available at `http://localhost:8000`.
 
-## Executando localmente
+---
 
-### 1. Criar e ativar ambiente virtual
-
-```bash
-python -m venv .venv
-source .venv/bin/activate        # Linux/macOS
-.venv\Scripts\activate           # Windows
-```
-
-### 2. Instalar dependências
+## Running the Integration Tests
 
 ```bash
-pip install -r requirements-dev.txt
+docker-compose --profile test run --rm test
 ```
 
-### 3. Iniciar a aplicação
+Tests run against an in-memory SQLite database — no external dependencies required.
+
+---
+
+## API Endpoint
+
+### `GET /producers/award-intervals`
+
+Returns the producer with the longest and shortest interval between two consecutive awards.
 
 ```bash
-python main.py
+curl http://localhost:8000/producers/award-intervals
 ```
 
-A API estará disponível em `http://localhost:8080`.
-
-## Endpoints
-
-| Método | Rota                          | Autenticação | Descrição                                 |
-|--------|-------------------------------|--------------|-------------------------------------------|
-| GET    | `/ping`                       | Não          | Verifica se a API está no ar              |
-| GET    | `/health`                     | Não          | Status de saúde da aplicação              |
-| GET    | `/producers/award-intervals`  | Opcional     | Intervalos de prêmios por produtor        |
-
-### Exemplo de resposta — `/producers/award-intervals`
+**Response:**
 
 ```json
 {
@@ -70,81 +64,78 @@ A API estará disponível em `http://localhost:8080`.
 }
 ```
 
-## Autenticação (opcional)
+### Utility endpoints
 
-Se a variável de ambiente `API_TOKEN` estiver definida, o endpoint `/producers/award-intervals` exigirá o token via header:
+| Method | Route     | Description          |
+|--------|-----------|----------------------|
+| GET    | `/ping`   | Liveness check       |
+| GET    | `/health` | Health status        |
 
-```
-Authorization: Bearer <API_TOKEN>
-```
+---
 
-Os endpoints `/ping` e `/health` são sempre públicos.
+## Architecture
 
-### Ativando autenticação localmente
+The project follows a clean layered architecture:
 
-```bash
-API_TOKEN=my-secret python main.py
-```
+- **`domain/`** — pure business logic, no framework dependencies
+  - `entities/` — immutable domain objects (`Movie`)
+  - `repositories/` — abstract protocols (`MovieReader`, `MovieWriter`)
+  - `services/` — domain algorithms (`award_interval_service`)
+  - `types/` — value objects (`ProducerInterval`, `AwardIntervalResult`)
+  - `usecases/` — use case orchestration
+- **`api/`** — HTTP layer (Flask blueprints, Pydantic response models)
+- **`infra/`** — infrastructure implementations (SQLAlchemy, CSV loader)
 
-### Ativando autenticação via Docker
+---
 
-Descomente a linha `API_TOKEN` no `docker-compose.yml`:
-
-```yaml
-environment:
-  - API_TOKEN=your-secret-token
-```
-
-## Rodando os testes de integração
-
-```bash
-# Com o ambiente virtual ativado
-pytest
-
-# Com saída detalhada
-pytest -v
-```
-
-## Variáveis de ambiente
-
-| Variável       | Padrão                  | Descrição                          |
-|----------------|-------------------------|------------------------------------|
-| `DATABASE_URL` | `sqlite:///:memory:`    | URL do banco de dados              |
-| `CSV_PATH`     | `data/movielist.csv`    | Caminho para o arquivo CSV         |
-| `API_TOKEN`    | _(não definido)_        | Token de autenticação (opcional)   |
-
-## Estrutura do projeto
+## Project Structure
 
 ```
 .
-├── api/                        # Rotas, autenticação e schemas de resposta
-│   ├── auth.py
-│   ├── routes.py
-│   └── schemas.py
+├── api/
+│   ├── blueprints/
+│   │   ├── health.py               # Observability endpoints
+│   │   └── producers.py            # Domain endpoints
+│   └── responses.py                # Pydantic response models
 ├── domain/
-│   ├── entities/               # Entidades puras (sem dependência de framework)
-│   │   └── movie.py
-│   ├── repositories/           # Interface (Protocol) do repositório
-│   │   └── movie_repository.py
-│   └── services/               # Regras de negócio
-│       └── award_interval_service.py
+│   ├── entities/
+│   │   └── movie.py                # Immutable Movie entity
+│   ├── repositories/
+│   │   └── movie_repository.py     # MovieReader / MovieWriter protocols
+│   ├── services/
+│   │   └── award_interval_service.py
+│   ├── types/
+│   │   ├── award_interval_result.py
+│   │   └── producer_interval.py
+│   └── usecases/
+│       └── get_award_intervals.py
 ├── infra/
-│   ├── csv/                    # Leitura do CSV
-│   │   └── csv_loader.py
-│   ├── db/                     # Modelos SQLAlchemy e sessão
-│   │   ├── models.py
+│   ├── data/
+│   │   └── movielist.csv
+│   ├── db/
+│   │   ├── base.py
+│   │   ├── models.py               # SQLAlchemy 2.0 ORM models
 │   │   └── session.py
-│   └── repositories/           # Implementação concreta do repositório
+│   ├── loaders/
+│   │   └── movie_file_loader.py
+│   └── repositories/
+│       ├── repository_factory.py
 │       └── sqlalchemy_movie_repository.py
-├── usecases/                   # Orquestração dos casos de uso
-│   ├── get_award_intervals.py
-│   └── import_movies.py
-├── tests/integration/          # Testes de integração
-├── app_factory.py              # Factory da aplicação Flask
-├── config.py                   # Configurações via variáveis de ambiente
-├── main.py                     # Entrypoint
-├── data/movielist.csv          # Dados dos filmes
-├── Dockerfile
+├── tests/integration/
+├── config.py                       # Settings via pydantic-settings
+├── create_app.py                   # Flask application factory
+├── main.py                         # WSGI entrypoint (gunicorn main:app)
+├── Dockerfile                      # Multi-stage: production + test
 ├── docker-compose.yml
 └── requirements.txt
 ```
+
+---
+
+## Environment Variables
+
+| Variable       | Default                    | Description                                  |
+|----------------|----------------------------|----------------------------------------------|
+| `DATABASE_URL` | `sqlite:///:memory:`       | Database URL                                 |
+| `CSV_PATH`     | `infra/data/movielist.csv` | Path to the movies CSV file                  |
+| `IN_MEMORY_DB` | `true`                     | Use StaticPool for in-memory SQLite database |

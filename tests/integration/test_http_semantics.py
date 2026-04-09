@@ -1,14 +1,15 @@
 from unittest import TestCase
 
-from app_factory import create_app
-from tests.integration.conftest import TestConfig
+from create_app import create_app
+from tests.integration.conftest import AppConfig as TestConfig
 
 
 class TestRichardsonMaturityLevel2(TestCase):
-    def setUp(self):
+    @classmethod
+    def setUpClass(cls):
         app = create_app(TestConfig())
         app.config["TESTING"] = True
-        self.client = app.test_client()
+        cls.client = app.test_client()
 
     def test_get_returns_200(self):
         self.assertEqual(self.client.get("/producers/award-intervals").status_code, 200)
