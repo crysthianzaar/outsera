@@ -11,7 +11,7 @@ from infra.adapters.csv_adapter import CsvAdapter
 from infra.adapters.database_adapter import DatabaseAdapter
 from infra.db.session import create_session_factory
 from infra.loaders.movie_loader import load_movies
-from infra.repositories.movie_repository_impl import MovieRepository
+from infra.repositories.movie_repository_impl import MovieReadRepository, MovieWriteRepository
 
 logger = logging.getLogger(__name__)
 
@@ -23,10 +23,11 @@ def create_app(config: Config | None = None) -> Flask:
 
     session_factory = create_session_factory(cfg.DATABASE_URL, in_memory=cfg.IN_MEMORY_DB)
     db = DatabaseAdapter(session_factory)
-    repo = MovieRepository(db)
-    use_case = GetAwardIntervalsUseCase(repo)
+    reader = MovieReadRepository(db)
+    writer = MovieWriteRepository(db)
+    use_case = GetAwardIntervalsUseCase(reader)
 
-    _load_csv_into_database(csv_path=cfg.CSV_PATH, repo=repo)
+    _load_csv_into_database(csv_path=cfg.CSV_PATH, repo=writer)
 
     app.register_blueprint(health_bp)
     app.register_blueprint(create_producers_blueprint(use_case))

@@ -3,10 +3,10 @@ from infra.adapters.data_source import DataSource
 
 
 def load_movies(adapter: DataSource) -> list[Movie]:
-    return [_to_entity(record) for record in adapter.fetch_all()]
+    return [_csv_row_to_movie(record) for record in adapter.fetch_all()]
 
 
-def _to_entity(record: dict) -> Movie:
+def _csv_row_to_movie(record: dict) -> Movie:
     return Movie(
         year=int(record["year"].strip()),
         title=record["title"].strip(),

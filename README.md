@@ -31,6 +31,17 @@ Tests run against an in-memory SQLite database — no external dependencies requ
 
 ---
 
+## Running Tests Locally
+
+```bash
+python -m venv .venv
+source .venv/bin/activate      # Windows: .venv\Scripts\activate
+pip install -r requirements-dev.txt
+pytest -v
+```
+
+---
+
 ## API Endpoint
 
 ### `GET /producers/award-intervals`
@@ -75,9 +86,9 @@ curl http://localhost:8000/producers/award-intervals
 
 ## Architecture
 
-The project follows a clean layered architecture:
+The project follows Clean Architecture with strict layer separation:
 
-- **`domain/`** — pure business logic, no framework dependencies
+- **`domain/`** — pure business logic, zero framework dependencies
   - `entities/` — immutable domain objects (`Movie`)
   - `repositories/` — abstract protocols (`MovieReader`, `MovieWriter`)
   - `services/` — domain algorithms (`award_interval_service`)
@@ -85,10 +96,10 @@ The project follows a clean layered architecture:
   - `usecases/` — use case orchestration (`GetAwardIntervalsUseCase`)
 - **`api/`** — HTTP layer (Flask blueprints, Pydantic response models)
 - **`infra/`** — infrastructure implementations
-  - `adapters/` — isolation layer for external dependencies (SQLAlchemy, CSV)
-  - `db/` — SQLAlchemy models and session factory
-  - `loaders/` — data ingestion pipeline
-  - `repositories/` — concrete repository implementations
+  - `adapters/` — isolation layer: `DatabaseAdapter`, `CsvAdapter`, `MovieStore` protocol, `MovieRecord` typed dict
+  - `db/` — SQLAlchemy 2.0 ORM model and session factory
+  - `loaders/` — CSV ingestion pipeline
+  - `repositories/` — `MovieReadRepository` and `MovieWriteRepository`
 
 ---
 
@@ -116,18 +127,19 @@ The project follows a clean layered architecture:
 ├── infra/
 │   ├── adapters/
 │   │   ├── csv_adapter.py              # CSV file reader
-│   │   ├── data_source.py              # DataSource protocol
-│   │   └── database_adapter.py         # SQLAlchemy isolation layer
+│   │   ├── data_source.py              # DataSource / MovieStore protocols
+│   │   ├── database_adapter.py         # SQLAlchemy isolation layer
+│   │   └── movie_record.py             # MovieRecord TypedDict
 │   ├── data/
 │   │   └── movielist.csv
 │   ├── db/
 │   │   ├── base.py
-│   │   ├── models.py                   # SQLAlchemy 2.0 ORM models
+│   │   ├── movie_model.py              # SQLAlchemy 2.0 ORM model
 │   │   └── session.py
 │   ├── loaders/
 │   │   └── movie_loader.py             # CSV → domain entity mapping
 │   └── repositories/
-│       └── movie_repository_impl.py    # Concrete MovieRepository
+│       ├── movie_repository_impl.py    # MovieReadRepository / MovieWriteRepository
 ├── tests/integration/
 ├── config.py                           # Settings via pydantic-settings
 ├── create_app.py                       # Flask application factory

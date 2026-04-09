@@ -1,6 +1,6 @@
 from sqlalchemy.orm import sessionmaker, Session
 
-from infra.db.models import MovieModel
+from infra.db.movie_model import MovieModel
 
 
 class DatabaseAdapter:
