@@ -1,0 +1,9 @@
+services:
+  api:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - CSV_PATH=data/movielist.csv
+      # Uncomment to enable token auth:
+      # - API_TOKEN=your-secret-token
